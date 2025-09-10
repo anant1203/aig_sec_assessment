@@ -1,0 +1,16 @@
+company,cik,year,variable,value_usd,unit,category_value,section
+AIG,5272,2020,Total revenues,"43,736",USD millions,,section_8
+AIG,5272,2016,Total revenues,"52,367",USD millions,,section_8
+AIG,5272,2012,Total revenues,"65,656",USD millions,,section_8
+AIG,5272,2008,Total revenues,"11,777",USD millions,,section_8
+AIG,5272,2004,Total revenues,"98,615",USD millions,,section_8
+AIG,5272,2020,Net income (loss) attributable to AIG,"-5,944",USD millions,,section_8
+AIG,5272,2016,Net income (loss) attributable to AIG,"3,348",USD millions,,section_8
+AIG,5272,2012,Net income (loss) attributable to AIG,"3,438",USD millions,,section_8
+AIG,5272,2008,Net income (loss) attributable to AIG,"-101,784",USD millions,,section_8
+AIG,5272,2004,Net income (loss) attributable to AIG,"9,731",USD millions,,section_8
+AIG,5272,2020,Auditor firm,,,PricewaterhouseCoopers LLP,section_8
+AIG,5272,2016,Auditor firm,,,PricewaterhouseCoopers LLP,section_8
+AIG,5272,2012,Auditor firm,,,PricewaterhouseCoopers LLP,section_8
+AIG,5272,2008,Auditor firm,,,PricewaterhouseCoopers LLP,section_8
+AIG,5272,2004,Auditor firm,,,PricewaterhouseCoopers LLP,section_8
