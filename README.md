@@ -1,129 +1,92 @@
-# Hybrid & Parent–Child Retrieval – README
+# Hybrid & Parent Document Retrieval
 
-This repo/notebook demonstrates two practical retrieval patterns you can use for RAG over long, structured documents (e.g., SEC/EDGAR filings):
-
-- **Solution 1 – Hybrid Retrieval**: Dense (FAISS) + Sparse (BM25) combined via `EnsembleRetriever`  
-- **Solution 2 – Parent–Child Retrieval**: Chunk-and-lift with `ParentDocumentRetriever` to return full “parent” sections from “child” chunks
-
-> Notebook: `hybrid_search.ipynb`  
-> Diagrams: see below (Solution 1 and Solution 2).
+This repository contains experiments and implementations for building **hybrid search** and **parent–child document retrieval** pipelines using LangChain, FAISS, and semantic chunking. The goal is to improve retrieval performance on long documents by combining dense (vector) and sparse (keyword) search, while also preserving parent–child relationships between document sections and their semantic chunks.
 
 ---
 
-## 1) Architecture
+## Project Structure
 
-### Solution 1 – Hybrid Retrieval
-![Solution 1](./image/Solution%201.png)
+- **`hybrid_search.ipynb`**  
+  Demonstrates hybrid retrieval by combining dense vector search (FAISS) with sparse keyword search (BM25).  
+  Key features:
+  - Indexing documents with OpenAI/Google embeddings.
+  - Hybrid retriever setup with weighted scores.
+  - Example queries comparing hybrid vs single-method results.
+ 
+![Hybrid Search](./image/Solution%201.png)
 
-**Flow**
-1. **Load Document(s)** and create a **hybrid vector store**.
-2. Build two retrievers:
-   - **Dense**: `FAISS` with your embedding model.
-   - **Sparse**: `BM25Retriever` (token-based).
-3. Combine them via **`EnsembleRetriever`** (weighted rank fusion).
-4. Pass the retrieved contexts to your **LLM** for extraction or question answering.
+- **`parent_document_retreiver.ipynb`**  
+  Implements a **Parent Document Retriever** that chunks long documents into smaller child documents while keeping links back to their parent.  
+  Key features:
+  - Semantic chunking with `SemanticChunker` or `RecursiveCharacterTextSplitter`.
+  - Parent–child indexing with FAISS and in-memory docstores.
+  - Retrieval of child chunks along with their parent section context.
 
-**When to use**
-- Queries can be semantic _or_ keyword-heavy.
-- You want competitive recall with simple infrastructure.
-- You do not need to reconstruct full sections/parents automatically.
-
----
-
-### Solution 2 – Parent–Child Retrieval
-![Solution 2](./image/Solution%202.png)
-
-**Flow**
-1. **Load Document(s)** and create **Parent docs** (e.g., one per section, file, or logical unit).  
-2. **Split** parents into **Child chunks** (semantic/recursive splitter).  
-3. Index **child chunks** in a vector store, but **return parent** documents on retrieval.  
-4. Feed parent sections to your **LLM** for extraction or Q&A.
-
-**When to use**
-- You need **section-level** answers (e.g., _“Item 10 from AIG’s 2019 10‑K”_).
-- You want fewer, richer contexts per query.
-- You care about passage-to-section traceability (child → parent).
+- **`WithoutVectorStore.ipynb`**  
+  Baseline approach that performs retrieval **without a vector store**, useful for comparison.  
+  Key features:
+  - Rule-based/document-structured retrieval.
+  - Demonstrates the limitations of non-embedding retrieval for semantic tasks.
+ 
+  ![Without Vectoe Store](./image/Solution%202.png)
 
 ---
 
-## 2) Quickstart
+## Setup
 
-### Environment
-```bash
-# Python 3.10+ recommended
-pip install -U "langchain>=0.2" langchain-community langchain-openai \
-    faiss-cpu rank-bm25 datasets pandas numpy pydantic
-# Optional: for Vertex AI or Google Generative AI embeddings
-pip install -U google-generativeai google-cloud-aiplatform
-```
-
-> **Tip:** If you use OpenAI embeddings, set `OPENAI_API_KEY`.  
-> For Vertex AI embeddings, authenticate with `gcloud auth application-default login`.
-
-### Run
-- Open `hybrid_search.ipynb` in Jupyter or VS Code.
-- Execute cells top-to-bottom for **Solution 1** and **Solution 2** sections.
-- Replace embedding/model choices as needed (OpenAI, Vertex AI, etc.).
-
----
-
-## 3) Data (Example: SEC/EDGAR)
-The notebook is data‑agnostic, but examples reference the public HF dataset **`eloukas/edgar-corpus`** (10‑K style sections like `section_1`, `section_7A`, `section_9B`, etc.).  
-You can stream/filter by `cik`, `year`, and particular `section_*` columns before indexing.
-
-> If you’re using very large files, prefer **streaming**, **on-disk caches** (e.g., JSONL/Parquet), and **chunked processing** to avoid RAM spikes.
-
----
-
-## 4) How it Works
-
-### A. Hybrid Retrieval (Solution 1)
-**Key steps**
-1. **Split** documents into chunks (e.g., `RecursiveCharacterTextSplitter`).
-2. **Dense retriever**: index with FAISS (e.g., OpenAI or Vertex AI embeddings).
-3. **Sparse retriever**: build a `BM25Retriever` from the same chunks.
-4. **Combine**:
-   ```python
-   from langchain.retrievers import EnsembleRetriever
-   dense = vectorstore.as_retriever(search_kwargs={"k": 6})
-   sparse = bm25_retriever  # already a retriever
-   hybrid = EnsembleRetriever(retrievers=[dense, sparse], weights=[0.5, 0.5])
+1. **Clone the repo**  
+   ```bash
+   git clone https://github.com/your-username/hybrid-parent-retrieval.git
+   cd hybrid-parent-retrieval
    ```
-5. **RAG**: call `hybrid.get_relevant_documents(query)` and send to your LLM.
 
-**Tuning knobs**
-- `chunk_size`, `chunk_overlap`
-- `k` for dense/sparse retrievers
-- `weights` for rank fusion in `EnsembleRetriever`
+2. **Install dependencies**  
+   Create a virtual environment and install required libraries:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Typical dependencies include:
+   - `langchain`
+   - `langchain-community`
+   - `langchain-experimental`
+   - `faiss-cpu`
+   - `rank-bm25`
+   - `datasets`
+   - `pandas`
+   - `jupyter`
+
+3. **Environment Variables**  
+   Add your API keys in `.env` or environment variables:
+   ```bash
+   export OPENAI_API_KEY=your_key_here
+   export GOOGLE_API_KEY=your_key_here
+   ```
 
 ---
 
-### B. Parent–Child Retrieval (Solution 2)
-**Key steps**
-1. **Parents**: create one doc per **logical section** (e.g., each `section_*` cell).  
-   Include metadata: `filename`, `cik`, `year`, `section`, `parent_id` (e.g., `"{filename}#{section}"`).
-2. **Children**: split each parent into chunks, attach `parent_id` to each child.
-3. **Index**: only **children** go into FAISS (dense retrieval).
-4. **Retrieve & Lift**: on a query, fetch child chunks, then **lift** to the **parent** doc(s).
+## Usage
 
-**LangChain sketch**
-```python
-from langchain.storage import InMemoryStore
-from langchain.retrievers import ParentDocumentRetriever
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+Open Jupyter Lab/Notebook and run the notebooks in order depending on your experiment:
 
-parent_store = InMemoryStore()  # stores full parents
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=150)
-vectorstore  = FAISS.from_embeddings(...)
+1. **Hybrid Search**  
+   ```bash
+   jupyter notebook hybrid_search.ipynb
+   ```
+   Explore hybrid retrieval across sample queries.
 
-retriever = ParentDocumentRetriever(
-    vectorstore=vectorstore,        # where children live
-    docstore=parent_store,          # where parents live
-    child_splitter=child_splitter,
-    search_kwargs={"k": 6},
-)
-```
-> Depending on your LangChain version, `InMemoryStore` (not `InMemoryDocstore`) is the right type for `docstore`.
+2. **Parent Document Retriever**  
+   ```bash
+   jupyter notebook parent_document_retreiver.ipynb
+   ```
+   Build and test parent–child retrievers with semantic chunking.
+
+3. **Without Vector Store**  
+   ```bash
+   jupyter notebook WithoutVectorStore.ipynb
+   ```
+   Compare results to baseline approaches.
+
+---
 
 **Benefits**
 - Returns few, **high-signal** contexts (full sections).
@@ -132,72 +95,20 @@ retriever = ParentDocumentRetriever(
 
 ---
 
-## 5) Common Pitfalls & Fixes
+## Example Workflow
 
-- **`ValidationError ... EnsembleRetriever ... Input should be an instance of Runnable`**  
-  You likely passed a vector store instead of a retriever. Use `vectorstore.as_retriever(...)` for the dense side:
-  ```python
-  dense = vectorstore.as_retriever(search_kwargs={"k": 6})
-  sparse = bm25_retriever
-  hybrid = EnsembleRetriever(retrievers=[dense, sparse], weights=[0.5, 0.5])
-  ```
-
-- **Parent retriever error: `docstore` must be `BaseStore`**  
-  On newer LangChain versions, use `from langchain.storage import InMemoryStore` (not `InMemoryDocstore`).
-
-- **Google embeddings error: `unexpected model name format`**  
-  Use a valid model id, e.g.:
-  - Vertex AI: `text-embedding-004` (via `aiplatform`), or
-  - Google Generative AI: `models/text-embedding-004`.
-  Ensure the SDK matches the model provider.
-
-- **FAISS dimension mismatch**  
-  Probe dimension once and construct the FAISS index accordingly:
-  ```python
-  dim = len(embeddings.embed_query("dimension probe"))
-  index = faiss.IndexFlatIP(dim)
-  ```
-
-- **OOM / large task warnings (Spark/JVM)**  
-  - Prefer streaming + JSONL/Parquet staging.  
-  - Increase driver/executor memory (`--driver-memory`, `--executor-memory`).  
-  - Avoid collecting huge RDDs/DataFrames to the driver.
+- Load SEC filings or other structured datasets (e.g., `eloukas/edgar-corpus`).
+- Split each filing into **sections** (parent docs).
+- Further chunk each section into **semantic child docs**.
+- Index child docs in FAISS; maintain parent–child mapping in an in-memory store.
+- Run retrieval with:
+  - **Vector-only**
+  - **Keyword-only**
+  - **Hybrid**
+  - **Parent Document Retriever**
 
 ---
 
-## 6) Evaluation (Optional)
-For quick sanity checks:
-- **Hit@k / Recall@k** over labeled queries → section ids.
-- **MRR / nDCG** for ranking quality.
-- **Answer Relevancy** (0–1) by a judge model or manual rubric.
-
-Keep eval small and focused (e.g., 20–50 queries) to iterate on chunking & weights quickly.
-
----
-
-## 7) Suggested Project Structure
-```
-.
-├── hybrid_search.ipynb
-├── Solution 1.png
-├── Solution 2.png
-└── README.md
-```
-
----
-
-## 8) Roadmap
-- Add a lightweight **retrieval evaluator** notebook (Hit@k, MRR).
-- Optional **re-ranker** (e.g., cross-encoder) atop hybrid retrieval.
-- Cache embeddings & stores to disk for faster cold starts.
-
----
-
-## 9) License
-Provided as-is for internal experimentation. Add your preferred license if you plan to distribute.
-
----
-
-## 10) Acknowledgments
+## Acknowledgments
 - LangChain community for `EnsembleRetriever` and `ParentDocumentRetriever` patterns.
 - FAISS & Rank-BM25 for fast dense/sparse retrieval.
