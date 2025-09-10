@@ -30,6 +30,12 @@ This repository contains experiments and implementations for building **hybrid s
  
   ![Without Vectoe Store](./image/Solution%202.png)
 
+  
+**Benefits**
+- Returns few, **high-signal** contexts (full sections).
+- Great for **structured reports** with clear section boundaries.
+- Natural **traceability** from answer → parent section.
+
 ---
 
 ## Setup
@@ -85,13 +91,6 @@ Open Jupyter Lab/Notebook and run the notebooks in order depending on your exper
    jupyter notebook WithoutVectorStore.ipynb
    ```
    Compare results to baseline approaches.
-
----
-
-**Benefits**
-- Returns few, **high-signal** contexts (full sections).
-- Great for **structured reports** with clear section boundaries.
-- Natural **traceability** from answer → parent section.
 
 ---
 
