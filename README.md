@@ -21,6 +21,8 @@ This repository contains experiments and implementations for building **hybrid s
   - Semantic chunking with `SemanticChunker` or `RecursiveCharacterTextSplitter`.
   - Parent–child indexing with FAISS and in-memory docstores.
   - Retrieval of child chunks along with their parent section context.
+ 
+![Parent Document Retreiver](./image/Solution%201.png)
 
 - **`WithoutVectorStore.ipynb`**  
   Baseline approach that performs retrieval **without a vector store**, useful for comparison.  
