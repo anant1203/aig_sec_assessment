@@ -22,7 +22,7 @@ This repository contains experiments and implementations for building **hybrid s
   - Parent–child indexing with FAISS and in-memory docstores.
   - Retrieval of child chunks along with their parent section context.
  
-![Parent Document Retreiver](./image/Solution%201.png)
+![Parent Document Retreiver](./image/Solution203.png)
 
 - **`WithoutVectorStore.ipynb`**  
   Baseline approach that performs retrieval **without a vector store**, useful for comparison.  
